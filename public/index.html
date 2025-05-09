@@ -1,84 +1,142 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="utf-8">
   <title>Rust Cracker</title>
   <link rel="icon" href="/favicon.ico">
   <link rel="stylesheet" href="/style.css">
+
+  <!-- Load AdSense library -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5615428420355933"
+     crossorigin="anonymous"></script>
 </head>
 <body>
-  <div class="glass-card">
-    <h2>Insert number of players</h2>
-    <input
-      type="number"
-      id="playerCount"
-      class="host-input"
-      placeholder="1–100 players"
-      min="1"
-      max="100"
-    >
-    <button id="generateButton" class="host-button">
-      Generate Link
-    </button>
-    <br>
-    <button id="copyButton" class="copy-button" style="display:none;">
-      Copy Link
-    </button>
+  <!-- AdSense unit -->
+  <div class="ad-container" style="text-align:center; margin: 20px 0;">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-5615428420355933"
+         data-ad-slot="5306128534"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
   </div>
 
+  <div class="glass-card">
+    <h1>RUST CODES</h1>
+    <div class="player-code" id="playerNumber">Loading…</div>
+    <div class="session-id" id="sessionId"></div>
+
+    <div class="button-row">
+      <button class="prev-button" onclick="prev()">Prev</button>
+      <button class="next-button" onclick="next()">Next</button>
+    </div>
+
+    <div class="stats-title">Overall Team Progress: <span id="overallProgress">0.00%</span></div>
+    <div class="stat-container"><div class="stat-bar" id="overallBar"></div></div>
+
+    <div class="stats-title">Your Progress: <span id="yourProgress">0.00%</span></div>
+    <div class="stat-container"><div class="stat-bar" id="yourBar"></div></div>
+
+    <div class="stats-title">All Players:</div>
+    <div id="allPlayers"></div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
   <script>
-  (function() {
-    const genBtn  = document.getElementById('generateButton');
-    const copyBtn = document.getElementById('copyButton');
-    let generatedLink = '';
+    const params       = new URLSearchParams(location.search);
+    const sessionId    = params.get('session');
+    const totalPlayers = parseInt(params.get('total'),10) || 4;
 
-    genBtn.addEventListener('click', () => {
-      const inp = document.getElementById('playerCount');
-      const raw = inp.value.trim();
+    const socket = io({ query: { session: sessionId, total: totalPlayers } });
 
-      // 1) Only digits
-      if (!/^\d+$/.test(raw)) {
-        alert('Please enter a numeric player count.');
-        return;
-      }
+    let playerIndex, assignedCodes = [], currentIdx = 0;
+    let progressArr   = Array(totalPlayers).fill(0);
 
-      const count = parseInt(raw, 10);
-      // 2) Enforce bounds
-      if (count < 1 || count > 100) {
-        alert('Player count must be between 1 and 100.');
-        return;
-      }
+    const saved = localStorage.getItem(`playerIndex_${sessionId}`);
+    if (saved !== null) socket.emit('reconnectPlayer', +saved);
+    else                socket.emit('newPlayer');
 
-      // 3) Generate a safe session ID (alphanumeric only)
-      let sessionId = '';
-      const bytes = crypto.getRandomValues(new Uint8Array(6));
-      for (let b of bytes) {
-        sessionId += (b % 36).toString(36);
-      }
-
-      // 4) Build the URL with full encoding
-      const origin = window.location.origin;
-      generatedLink = 
-        `${origin}/player.html?session=${encodeURIComponent(sessionId)}` +
-        `&total=${encodeURIComponent(count)}`;
-
-      // 5) Reveal the copy button
-      copyBtn.style.display   = 'inline-block';
-      copyBtn.textContent     = 'Copy Link';
+    socket.on('assignedIndex', idx => {
+      playerIndex = idx;
+      localStorage.setItem(`playerIndex_${sessionId}`, idx);
+      document.getElementById('sessionId').innerText = `Session: ${sessionId}`;
     });
 
-    copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(generatedLink)
-        .then(() => {
-          copyBtn.textContent = 'Copied!';
-        })
-        .catch(err => {
-          console.error('Copy failed:', err);
-          alert('Failed to copy link.');
-        });
+    socket.on('codeList', list => {
+      assignedCodes = list;
+      const savedPos = localStorage.getItem(`codeIdx_${sessionId}_${playerIndex}`);
+      if (savedPos!==null && +savedPos < assignedCodes.length) {
+        currentIdx = +savedPos;
+      }
+      showCode();
+      sendProgressUpdate();
     });
-  })();
+
+    socket.on('updateProgress', data => {
+      progressArr = data.playerProgress;
+      renderStats();
+    });
+
+    socket.on('reclaimDenied', () => alert('Slot already taken'));
+    socket.on('error', msg => alert(msg));
+
+    function showCode() {
+      document.getElementById('playerNumber').innerText =
+        `Player ${playerIndex+1} | Code: ${assignedCodes[currentIdx]}`;
+      renderStats();
+    }
+
+    function sendProgressUpdate() {
+      const pct = (currentIdx / (assignedCodes.length-1)) * 100;
+      socket.emit('progressUpdate', pct);
+    }
+
+    function nav(dir, color) {
+      const next = currentIdx + dir;
+      if (next<0 || next>=assignedCodes.length) return;
+      currentIdx = next;
+      localStorage.setItem(`codeIdx_${sessionId}_${playerIndex}`, currentIdx);
+      showCode();
+      sendProgressUpdate();
+      flash(color);
+    }
+    function prev(){ nav(-1,'red'); }
+    function next(){ nav(+1,'green'); }
+
+    function renderStats(){
+      const your = progressArr[playerIndex]||0;
+      document.getElementById('yourProgress').innerText = your.toFixed(2)+'%';
+      document.getElementById('yourBar').style.width = your+'%';
+
+      const sum = progressArr.reduce((a,b)=>a+b,0);
+      const overall = sum/totalPlayers;
+      document.getElementById('overallProgress').innerText = overall.toFixed(2)+'%';
+      document.getElementById('overallBar').style.width = overall+'%';
+
+      const allDiv = document.getElementById('allPlayers');
+      allDiv.innerHTML = '';
+      progressArr.forEach((p,i)=>{
+        const lbl = document.createElement('div');
+        lbl.textContent = `Player ${i+1}: ${p.toFixed(2)}%`;
+        const barC = document.createElement('div');
+        barC.className = 'stat-container';
+        const bar = document.createElement('div');
+        bar.className = 'stat-bar';
+        bar.style.width = p+'%';
+        barC.appendChild(bar);
+        allDiv.append(lbl, barC);
+      });
+    }
+
+    function flash(color){
+      const card = document.querySelector('.glass-card');
+      card.classList.add(color==='green'?'flash-green':'flash-red');
+      setTimeout(()=>card.classList.remove('flash-green','flash-red'),300);
+    }
   </script>
 </body>
 </html>

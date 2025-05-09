@@ -11,16 +11,30 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 100vh;      /* allow scrolling if content overflows */
+  min-height: 100vh;
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   color: white;
-  padding: 1rem;          /* small padding on very narrow screens */
+  padding: 1rem;
+}
+
+/* --- NEW: 3-column FLEX WRAPPER --- */
+.page-container {
+  display: flex;
+  justify-content: center;    /* center columns in viewport */
+  align-items: flex-start;    /* align tops */
+  gap: 20px;                  /* space between ad & card */
+}
+
+/* --- NEW: constrain ad sidebars --- */
+.ad-container {
+  flex-shrink: 0;
+  width: 160px;               /* adjust to match ad size */
 }
 
 /* --- CARD CONTAINER (shared for both pages) --- */
 .glass-card {
-  width: 90%;             /* fluid width */
+  width: 90%;
   max-width: 600px;
   min-height: 300px;
   margin: auto;
@@ -66,7 +80,7 @@ h1, h2 {
   border-radius: 8px;
   cursor: pointer;
   color: white;
-  transition: background 0.2s, flex 0.2s;
+  transition: background 0.2s;
   white-space: nowrap;
 }
 
@@ -85,7 +99,7 @@ h1, h2 {
   display: flex;
   justify-content: center;
   gap: 15px;
-  flex-wrap: wrap;      /* wrap on small screens */
+  flex-wrap: wrap;
   margin: 15px 0;
 }
 
@@ -97,7 +111,7 @@ h1, h2 {
   border-radius: 12px;
   font-size: 2rem;
   margin: 20px 0;
-  word-break: break-all;  /* wrap long codes if needed */
+  word-break: break-all;
 }
 
 /* --- PROGRESS BARS --- */
@@ -151,10 +165,18 @@ h1, h2 {
 }
 
 /* ========== MOBILE-SPECIFIC TWEAKS ========== */
-@media (max-width: 480px) {
-  h1, h2 {
-    font-size: 1.5rem;
+@media (max-width: 800px) {
+  /* collapse to single column, hide ads */
+  .page-container {
+    flex-direction: column;
   }
+  .ad-container {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  h1, h2 { font-size: 1.5rem; }
   .host-input {
     font-size: 1rem;
     padding: 0.75rem;
@@ -167,29 +189,14 @@ h1, h2 {
     padding: 0.75rem 1rem;
     margin: 4px;
   }
-  .glass-card {
-    padding: 20px;
-  }
+  .glass-card { padding: 20px; }
   .player-code {
-    background: rgba(34,197,94,0.2);
-    color: #22c55e;
-    padding: 20px;
-    border-radius: 12px;
     font-size: 2rem;
-    margin: 20px 0;
-
-    /* prevent splitting digits onto two lines */
-    word-break: normal;      
-    white-space: nowrap;     /* keep it all on one line */
-    overflow-x: auto;        /* allow horizontal scroll if really too wide */
+    word-break: normal;
+    white-space: nowrap;
+    overflow-x: auto;
   }
-  .stats-title {
-    font-size: 0.9rem;
-  }
-  .stat-container {
-    height: 8px;
-  }
-  #allPlayers {
-    max-height: 200px;
-  }
+  .stats-title { font-size: 0.9rem; }
+  .stat-container { height: 8px; }
+  #allPlayers { max-height: 200px; }
 }
