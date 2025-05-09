@@ -171,8 +171,17 @@ h1, h2 {
     padding: 20px;
   }
   .player-code {
-    font-size: 1.5rem;
-    padding: 15px;
+    background: rgba(34,197,94,0.2);
+    color: #22c55e;
+    padding: 20px;
+    border-radius: 12px;
+    font-size: 2rem;
+    margin: 20px 0;
+
+    /* prevent splitting digits onto two lines */
+    word-break: normal;      
+    white-space: nowrap;     /* keep it all on one line */
+    overflow-x: auto;        /* allow horizontal scroll if really too wide */
   }
   .stats-title {
     font-size: 0.9rem;
