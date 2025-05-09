@@ -1,11 +1,30 @@
 <!DOCTYPE html>
-<html><head>
+<html>
+<head>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="utf-8">
   <title>Rust Cracker</title>
   <link rel="icon" href="/favicon.ico">
   <link rel="stylesheet" href="/style.css">
-</head><body>
+
+  <!-- Load AdSense library -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5615428420355933"
+     crossorigin="anonymous"></script>
+</head>
+<body>
+  <!-- AdSense unit -->
+  <div class="ad-container" style="text-align:center; margin: 20px 0;">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-5615428420355933"
+         data-ad-slot="5306128534"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+  </div>
+
   <div class="glass-card">
     <h1>RUST CODES</h1>
     <div class="player-code" id="playerNumber">Loading…</div>
@@ -37,7 +56,6 @@
     let playerIndex, assignedCodes = [], currentIdx = 0;
     let progressArr   = Array(totalPlayers).fill(0);
 
-    // try reconnect
     const saved = localStorage.getItem(`playerIndex_${sessionId}`);
     if (saved !== null) socket.emit('reconnectPlayer', +saved);
     else                socket.emit('newPlayer');
@@ -48,8 +66,6 @@
       document.getElementById('sessionId').innerText = `Session: ${sessionId}`;
     });
 
-    // ← this is the magic line: once the server sends your codes,
-    //     we store them and immediately call showCode()
     socket.on('codeList', list => {
       assignedCodes = list;
       const savedPos = localStorage.getItem(`codeIdx_${sessionId}_${playerIndex}`);
@@ -122,4 +138,5 @@
       setTimeout(()=>card.classList.remove('flash-green','flash-red'),300);
     }
   </script>
-</body></html>
+</body>
+</html>
