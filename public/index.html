@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Code Rust – Host Page</title>
-  <!-- absolute path so CSS loads on any host/origin -->
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
@@ -14,54 +13,71 @@
       type="number"
       id="playerCount"
       class="host-input"
-      placeholder="Insert player number"
+      placeholder="1–100 players"
+      min="1"
+      max="100"
     >
-    <button class="host-button" onclick="generateLink()">
+    <button id="generateButton" class="host-button">
       Generate Link
     </button>
     <br>
-    <button
-      id="copyButton"
-      class="copy-button"
-      style="display:none;"
-      onclick="copyLink()"
-    >
+    <button id="copyButton" class="copy-button" style="display:none;">
       Copy Link
     </button>
   </div>
 
   <script>
+  (function() {
+    const genBtn  = document.getElementById('generateButton');
+    const copyBtn = document.getElementById('copyButton');
     let generatedLink = '';
 
-    function generateLink() {
-      const count = parseInt(
-        document.getElementById('playerCount').value,
-        10
-      );
-      if (isNaN(count) || count < 1) {
-        alert('Please enter a valid player count.');
+    genBtn.addEventListener('click', () => {
+      const inp = document.getElementById('playerCount');
+      const raw = inp.value.trim();
+
+      // 1) Only digits
+      if (!/^\d+$/.test(raw)) {
+        alert('Please enter a numeric player count.');
         return;
       }
-      // random session ID
-      const sessionId = Math.random().toString(36).substring(2, 8);
-      // build off current origin (so works on Render/Heroku/custom domain)
-      generatedLink = `${window.location.origin}/player.html?session=${sessionId}&total=${count}`;
 
-      const btn = document.getElementById('copyButton');
-      btn.style.display = 'inline-block';
-      btn.innerText = 'Copy Link';
-    }
+      const count = parseInt(raw, 10);
+      // 2) Enforce bounds
+      if (count < 1 || count > 100) {
+        alert('Player count must be between 1 and 100.');
+        return;
+      }
 
-    function copyLink() {
-      navigator.clipboard
-        .writeText(generatedLink)
+      // 3) Generate a safe session ID (alphanumeric only)
+      let sessionId = '';
+      const bytes = crypto.getRandomValues(new Uint8Array(6));
+      for (let b of bytes) {
+        sessionId += (b % 36).toString(36);
+      }
+
+      // 4) Build the URL with full encoding
+      const origin = window.location.origin;
+      generatedLink = 
+        `${origin}/player.html?session=${encodeURIComponent(sessionId)}` +
+        `&total=${encodeURIComponent(count)}`;
+
+      // 5) Reveal the copy button
+      copyBtn.style.display   = 'inline-block';
+      copyBtn.textContent     = 'Copy Link';
+    });
+
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(generatedLink)
         .then(() => {
-          document.getElementById('copyButton').innerText = 'Copied!';
+          copyBtn.textContent = 'Copied!';
         })
         .catch(err => {
           console.error('Copy failed:', err);
+          alert('Failed to copy link.');
         });
-    }
+    });
+  })();
   </script>
 </body>
 </html>
