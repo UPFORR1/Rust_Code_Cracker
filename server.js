@@ -1,20 +1,31 @@
+// server.js
 const express = require('express');
-const app     = express();
-const http    = require('http').createServer(app);
-const io      = require('socket.io')(http);
+const http    = require('http');
+const { Server } = require('socket.io');
+const path    = require('path');
 
-app.use(express.static('public'));
+// 1️⃣ load your cleaned up codes
+//    Make sure pin_codes_fixed.json lives next to this file
+const pinCodes = require('./pin_codes_fixed.json');
 
-const sessions = {};  // sessionId → { maxPlayers, playerIdToIndex, playerProgress }
+const app    = express();
+const httpSrv = http.createServer(app);
+const io     = new Server(httpSrv);
+
+// 2️⃣ serve everything in public/
+app.use(express.static(path.join(__dirname, 'public')));
+
+// in-memory sessions map
+const sessions = {};
 
 io.on('connection', socket => {
   const { session: sessionId, total } = socket.handshake.query;
   if (!sessionId) {
-    socket.emit('error', 'No session specified');
-    return socket.disconnect();
+    socket.emit('error','Session ID required');
+    return socket.disconnect(true);
   }
 
-  // lazy-init session
+  // 3️⃣ initialize session if new
   if (!sessions[sessionId]) {
     sessions[sessionId] = {
       maxPlayers: parseInt(total,10) || 4,
@@ -25,24 +36,27 @@ io.on('connection', socket => {
   const sess = sessions[sessionId];
   const { maxPlayers, playerIdToIndex, playerProgress } = sess;
 
-  // helpers bound to this session
-  function broadcastProgress() {
-    const arr = Array(maxPlayers).fill(0);
-    Object.entries(playerProgress).forEach(([i,v]) => arr[i]=v);
-    const overall = arr.reduce((a,b)=>a+b,0) / maxPlayers;
-    io.to(sessionId).emit('updateProgress', {
-      playerProgress: arr,
-      totalProgress: overall
-    });
-  }
-
-  // join a room so we can broadcast per-session
   socket.join(sessionId);
 
+  // helper to broadcast everyone’s progress
+  function broadcastProgress() {
+    const arr = Array(maxPlayers).fill(0);
+    for (const [i,v] of Object.entries(playerProgress)) {
+      arr[i] = v;
+    }
+    io.to(sessionId).emit('updateProgress', { playerProgress: arr });
+  }
+
+  // helper to send *only* this player’s codes
+  function sendCodes(index) {
+    const myCodes = pinCodes.filter((_,i) => i % maxPlayers === index);
+    socket.emit('codeList', myCodes);
+  }
+
+  // 4️⃣ new player slot
   socket.on('newPlayer', () => {
-    // find first free slot
     let slot = null;
-    for (let i=0; i<maxPlayers; i++) {
+    for (let i = 0; i < maxPlayers; i++) {
       if (!Object.values(playerIdToIndex).includes(i)) {
         slot = i;
         break;
@@ -53,35 +67,39 @@ io.on('connection', socket => {
       return;
     }
     playerIdToIndex[socket.id] = slot;
-    playerProgress[slot] = playerProgress[slot]||0;
+    playerProgress[slot] = playerProgress[slot] || 0;
 
     socket.emit('assignedIndex', slot);
+    sendCodes(slot);
     broadcastProgress();
   });
 
-  socket.on('reconnectPlayer', idx => {
-    const takenBy = Object.entries(playerIdToIndex)
-                           .find(([id,i]) => i===idx);
-    if (!takenBy) {
-      // free → reclaim
-      playerIdToIndex[socket.id] = idx;
-      playerProgress[idx] = playerProgress[idx]||0;
-      socket.emit('assignedIndex', idx);
+  // 5️⃣ reconnect to previous slot
+  socket.on('reconnectPlayer', reqIdx => {
+    const taken = Object.entries(playerIdToIndex)
+                       .find(([,idx]) => idx === reqIdx);
+    if (!taken) {
+      playerIdToIndex[socket.id] = reqIdx;
+      playerProgress[reqIdx] = playerProgress[reqIdx]||0;
+      socket.emit('assignedIndex', reqIdx);
+      sendCodes(reqIdx);
       broadcastProgress();
       return;
     }
-    const [otherId] = takenBy;
-    if (otherId === socket.id || !io.sockets.sockets.get(otherId)?.connected) {
-      // same or disconnected → reclaim
+    const [otherId] = taken;
+    const otherSock = io.sockets.sockets.get(otherId);
+    if (!otherSock || !otherSock.connected) {
       delete playerIdToIndex[otherId];
-      playerIdToIndex[socket.id] = idx;
-      socket.emit('assignedIndex', idx);
+      playerIdToIndex[socket.id] = reqIdx;
+      socket.emit('assignedIndex', reqIdx);
+      sendCodes(reqIdx);
       broadcastProgress();
     } else {
       socket.emit('reclaimDenied');
     }
   });
 
+  // 6️⃣ progress updates
   socket.on('progressUpdate', pct => {
     const idx = playerIdToIndex[socket.id];
     if (idx != null) {
@@ -90,16 +108,15 @@ io.on('connection', socket => {
     }
   });
 
+  // 7️⃣ cleanup on disconnect
   socket.on('disconnect', () => {
     delete playerIdToIndex[socket.id];
     broadcastProgress();
   });
 });
 
-app.get('/', (req, res) => {
-  res.send('Server running');
-});
-
-http.listen(3000, () => {
-  console.log('Listening on http://localhost:3000');
+// 8️⃣ start server on provided PORT or 3000
+const PORT = process.env.PORT || 3000;
+httpSrv.listen(PORT, () => {
+  console.log(`Listening on port ${PORT}`);
 });
