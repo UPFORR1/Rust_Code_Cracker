@@ -1,39 +1,66 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Code Rust - Host Page</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <title>Code Rust – Host Page</title>
+  <!-- absolute path so CSS loads on any host/origin -->
+  <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-    <div class="glass-card">
-        <h2>Insert number of players</h2>
-        <input type="number" id="playerCount" class="host-input" placeholder="Insert player number">
-        <button class="host-button" onclick="generateLink()">Generate Link</button>
-        <br>
-        <button id="copyButton" class="copy-button" style="display:none;" onclick="copyLink()">Copy Link</button>
-    </div>
+  <div class="glass-card">
+    <h2>Insert number of players</h2>
+    <input
+      type="number"
+      id="playerCount"
+      class="host-input"
+      placeholder="Insert player number"
+    >
+    <button class="host-button" onclick="generateLink()">
+      Generate Link
+    </button>
+    <br>
+    <button
+      id="copyButton"
+      class="copy-button"
+      style="display:none;"
+      onclick="copyLink()"
+    >
+      Copy Link
+    </button>
+  </div>
 
-    <script>
-        let generatedLink = '';
+  <script>
+    let generatedLink = '';
 
-        function generateLink() {
-            const count = parseInt(document.getElementById('playerCount').value, 10);
-            if (!count || count < 1) {
-                alert('Please enter a valid player count.');
-                return;
-            }
-            const sessionId = Math.random().toString(36).substring(2, 8);
-            generatedLink = 
-              `http://localhost:3000/player.html?session=${sessionId}&total=${count}`;
-            document.getElementById('copyButton').style.display = 'inline-block';
-            document.getElementById('copyButton').innerText = 'Copy Link';
-        }
+    function generateLink() {
+      const count = parseInt(
+        document.getElementById('playerCount').value,
+        10
+      );
+      if (isNaN(count) || count < 1) {
+        alert('Please enter a valid player count.');
+        return;
+      }
+      // random session ID
+      const sessionId = Math.random().toString(36).substring(2, 8);
+      // build off current origin (so works on Render/Heroku/custom domain)
+      generatedLink = `${window.location.origin}/player.html?session=${sessionId}&total=${count}`;
 
-        function copyLink() {
-            navigator.clipboard.writeText(generatedLink).then(() => {
-                document.getElementById('copyButton').innerText = 'Copied!';
-            });
-        }
-    </script>
+      const btn = document.getElementById('copyButton');
+      btn.style.display = 'inline-block';
+      btn.innerText = 'Copy Link';
+    }
+
+    function copyLink() {
+      navigator.clipboard
+        .writeText(generatedLink)
+        .then(() => {
+          document.getElementById('copyButton').innerText = 'Copied!';
+        })
+        .catch(err => {
+          console.error('Copy failed:', err);
+        });
+    }
+  </script>
 </body>
 </html>
