@@ -1,0 +1,138 @@
+/* --- GLOBAL PAGE STYLING --- */
+body {
+  background: linear-gradient(135deg, #111, #222);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  margin: 0;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: white;
+}
+
+/* --- CARD CONTAINER (shared for both pages) --- */
+.glass-card {
+  backdrop-filter: blur(10px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 40px;
+  width: 90%;
+  max-width: 600px;
+  min-height: 300px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  text-align: center;
+}
+
+/* --- HEADINGS --- */
+h1, h2 {
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+/* --- INPUT FIELD --- */
+.host-input {
+  width: 90%;
+  max-width: 400px;
+  padding: 1rem;
+  font-size: 1.2rem;
+  margin: 20px auto;
+  border-radius: 8px;
+  border: none;
+  box-sizing: border-box;
+  outline: none;
+}
+
+/* --- BUTTONS --- */
+.host-button, .copy-button, .prev-button, .next-button {
+  width: auto;
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+  margin: 5px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: white;
+  transition: background 0.2s;
+}
+
+.host-button { background: #3b82f6; }
+.copy-button { background: #10b981; }
+.prev-button { background: #ef4444; }
+.next-button { background: #3b82f6; }
+
+.host-button:hover { background: #2563eb; }
+.copy-button:hover { background: #059669; }
+.prev-button:hover { background: #b91c1c; }
+.next-button:hover { background: #2563eb; }
+
+/* --- BUTTON ROW FOR PLAYER PAGE --- */
+.button-row {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin: 15px 0;
+}
+
+/* --- PLAYER CODE DISPLAY --- */
+.player-code {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+  padding: 20px;
+  border-radius: 12px;
+  font-size: 2rem;
+  margin: 20px 0;
+}
+
+/* --- PROGRESS BARS --- */
+.stats-title {
+  margin: 10px 0;
+  font-weight: bold;
+  color: #facc15;
+}
+
+.stat-container {
+  background: rgba(255,255,255,0.1);
+  border-radius: 4px;
+  overflow: hidden;
+  height: 10px;
+  margin: 5px 0;
+}
+
+.stat-bar {
+  background: #facc15;
+  height: 100%;
+  width: 0%;
+  transition: width 0.3s;
+}
+
+/* --- SCROLLBAR FOR ALL PLAYERS --- */
+#allPlayers {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 5px;
+  scrollbar-width: thin;
+  scrollbar-color: #facc15 rgba(255,255,255,0.1);
+}
+
+#allPlayers::-webkit-scrollbar {
+  width: 8px;
+}
+
+#allPlayers::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.1);
+}
+
+#allPlayers::-webkit-scrollbar-thumb {
+  background-color: #facc15;
+  border-radius: 4px;
+}
+.glass-card.flash-green {
+  box-shadow: 0 0 30px rgba(34,197,94,0.4);
+  transition: box-shadow 0.3s ease;
+}
+
+.glass-card.flash-red {
+  box-shadow: 0 0 30px rgba(239,68,68,0.4);
+  transition: box-shadow 0.3s ease;
+}

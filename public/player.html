@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Code Rust - Player Page</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="glass-card">
+    <h1>CODE RUST</h1>
+    <div class="player-code" id="playerNumber">Loading...</div>
+
+    <div class="button-row">
+        <button class="prev-button" onclick="prev()">Prev</button>
+        <button class="next-button" onclick="next()">Next</button>
+    </div>
+
+    <div class="stats-title">Overall Team Progress: <span id="overallProgress">0.00%</span></div>
+    <div class="stat-container"><div class="stat-bar" id="overallBar"></div></div>
+
+    <div class="stats-title">Your Progress: <span id="yourProgress">0.00%</span></div>
+    <div class="stat-container"><div class="stat-bar" id="yourBar"></div></div>
+
+    <div class="stats-title">All Players:</div>
+    <div id="allPlayers"></div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // Grab session & total from URL
+  const params = new URLSearchParams(window.location.search);
+  const sessionId   = params.get('session');
+  const totalPlayers = parseInt(params.get('total'), 10) || 4;
+
+  // Pass both to the server
+  const socket = io({
+    query: { session: sessionId, total: totalPlayers }
+  });
+
+  let playerIndex = null;
+  let assignedCodes = [];
+  let currentCodeIndex = 0;
+  let playerProgress = Array(totalPlayers).fill(0);
+  let reclaimFailed = false;
+
+  // attempt reconnection
+  const savedIndex = localStorage.getItem(`playerIndex_${sessionId}`);
+  if (savedIndex !== null) {
+    socket.emit('reconnectPlayer', parseInt(savedIndex, 10));
+  } else {
+    socket.emit('newPlayer');
+  }
+
+  socket.on('assignedIndex', idx => {
+    if (reclaimFailed) return;
+    playerIndex = idx;
+    localStorage.setItem(`playerIndex_${sessionId}`, idx);
+    startGame();
+  });
+
+  socket.on('reclaimDenied', () => {
+    reclaimFailed = true;
+    alert('Could not reclaim old slot.');
+  });
+
+  socket.on('updateProgress', data => {
+    playerProgress = data.playerProgress;
+    updateAll();
+  });
+
+  socket.on('error', msg => alert(msg));
+
+  function startGame() {
+    document.getElementById('playerNumber').innerText = `Player ${playerIndex+1}`;
+
+    fetch('pin_codes.json')
+      .then(r => r.json())
+      .then(pool => {
+        // split codes round-robin
+        assignedCodes = pool.filter((_, i) => i % totalPlayers === playerIndex);
+
+        // restore last index
+        const saved = localStorage.getItem(`codeIdx_${sessionId}_${playerIndex}`);
+        if (saved !== null && +saved < assignedCodes.length) {
+          currentCodeIndex = +saved;
+        }
+
+        showCode();
+        sendProgressUpdate();
+      });
+  }
+
+  function showCode() {
+    const code = assignedCodes[currentCodeIndex];
+    document.getElementById('playerNumber').innerText =
+      `Player ${playerIndex+1} | Code: ${code}`;
+    updateAll();
+  }
+
+  function sendProgressUpdate() {
+    const pct = (currentCodeIndex / (assignedCodes.length - 1)) * 100;
+    socket.emit('progressUpdate', pct);
+  }
+
+  function nav(delta, color) {
+    const nextIdx = currentCodeIndex + delta;
+    if (nextIdx < 0 || nextIdx >= assignedCodes.length) return;
+    currentCodeIndex = nextIdx;
+    localStorage.setItem(
+      `codeIdx_${sessionId}_${playerIndex}`, currentCodeIndex
+    );
+    showCode();
+    sendProgressUpdate();
+    flashCard(color);
+  }
+
+  function prev() { nav(-1,'red'); }
+  function next() { nav(+1,'green'); }
+
+  function updateAll() {
+    // your bar
+    const your = playerProgress[playerIndex]||0;
+    document.getElementById('yourProgress').innerText = your.toFixed(2)+'%';
+    document.getElementById('yourBar').style.width = your+'%';
+
+    // overall
+    const sum = playerProgress.reduce((a,b)=>a+b,0);
+    const overall = sum/totalPlayers;
+    document.getElementById('overallProgress').innerText = overall.toFixed(2)+'%';
+    document.getElementById('overallBar').style.width = overall+'%';
+
+    // list everyone
+    const cont = document.getElementById('allPlayers');
+    cont.innerHTML = '';
+    playerProgress.forEach((p,i) => {
+      const lbl = document.createElement('div');
+      lbl.textContent = `Player ${i+1}: ${p.toFixed(2)}%`;
+      const barC = document.createElement('div');
+      barC.className = 'stat-container';
+      const bar = document.createElement('div');
+      bar.className = 'stat-bar';
+      bar.style.width = p+'%';
+      barC.appendChild(bar);
+      cont.append(lbl, barC);
+    });
+  }
+
+  function flashCard(color) {
+    const card = document.querySelector('.glass-card');
+    card.classList.add(color==='green'?'flash-green':'flash-red');
+    setTimeout(()=>card.classList.remove('flash-green','flash-red'),300);
+  }
+</script>
+</body>
+</html>
