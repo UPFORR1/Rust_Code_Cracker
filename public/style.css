@@ -43,7 +43,7 @@ body {
 /* ========== CARD PANEL ========== */
 .glass-card {
   position: absolute;      /* pull it out of the normal flow */
-  top: 50%;                /* 50% down the viewport */
+  top: 55%;                /* 50% down the viewport */
   left: 50%;               /* 50% across the viewport */
   transform: translate(-50%, -50%);
   /* whatever width you like: */
