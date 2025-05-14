@@ -123,7 +123,7 @@ h1, h2 {
   left: 50%;
   width: 28px;
   height: 28px;
-  background-image: url("/images/spinner.png");
+  background-image: url("/Images/spinner.png");
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
