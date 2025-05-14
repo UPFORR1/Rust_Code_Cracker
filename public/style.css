@@ -247,7 +247,7 @@ body::after {
 /* ── FORCE CARD CENTER & LAYER ABOVE FADE ── */
 .glass-card {
   position: absolute;
-  top: 50%;
+  top: 55%;
   left: 50%;
   transform: translate(-50%, -50%);
   z-index: 2;               /* above the fade (z-index:1) */
