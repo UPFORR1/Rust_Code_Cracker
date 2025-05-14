@@ -16,7 +16,7 @@
   <!-- ── HEADER ── -->
   <header class="rust-header">
     <a href="/" class="rust-logo">
-      <img src="/images/rust-logo.png" alt="Rust Home">
+      <img src="/Images/rust-logo.png" alt="Rust Home">
     </a>
     <div class="rust-header-right">
       <select id="rust-language" class="rust-language">
@@ -25,70 +25,19 @@
         <option value="es">ES</option>
         <option value="zh">中</option>
       </select>
-      <button id="settingsBtn" class="rust-icon" aria-label="Settings">⚙</button>
     </div>
   </header>
-
-  <!-- ── LANGUAGE & TRANSLATION LOGIC ── -->
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const translations = {
-        en: {
-          heading: "Insert number of players",
-          placeholder: "1–100 players",
-          button: "Generate & Copy",
-          copied:  "Copied!"
-        },
-        ru: {
-          heading: "Введите количество игроков",
-          placeholder: "1–100 игроков",
-          button: "Сгенерировать и копировать",
-          copied:  "Скопировано!"
-        },
-        es: {
-          heading: "Ingrese el número de jugadores",
-          placeholder: "1–100 jugadores",
-          button: "Generar y copiar",
-          copied:  "¡Copiado!"
-        },
-        zh: {
-          heading: "输入玩家数量",
-          placeholder: "1–100 名玩家",
-          button: "生成并复制",
-          copied:  "已复制！"
-        }
-      };
-
-      const params     = new URLSearchParams(window.location.search);
-      const langSelect = document.getElementById('rust-language');
-      let   lang       = params.get('lang');
-
-      // 1) Validate or default to English
-      if (!lang || !translations[lang]) lang = 'en';
-
-      // 2) Set <html lang=…> and dropdown
-      document.documentElement.lang = lang;
-      langSelect.value = lang;
-
-      // 3) Apply translations
-      const t = translations[lang];
-      document.querySelector('.glass-card h2').textContent      = t.heading;
-      document.getElementById('playerCount').placeholder        = t.placeholder;
-      document.getElementById('generateButton').textContent     = t.button;
-
-      // 4) On language change, update param & reload
-      langSelect.addEventListener('change', () => {
-        params.set('lang', langSelect.value);
-        window.location.search = params.toString();
-      });
-
-      // 5) Settings button
-      document.getElementById('settingsBtn')
-        .addEventListener('click', () => {
-          window.location.href = '/settings.html';
-        });
-    });
-  </script>
+  <!-- ── SETTINGS PANEL ── -->
+<div id="settingsPanel" class="settings-panel">
+  <button id="closeSettings" class="settings-close" aria-label="Close">&times;</button>
+  <h3>Settings</h3>
+  <div class="settings-item">
+    <label>
+      <input type="checkbox" id="darkModeToggle">
+      Dark Mode
+    </label>
+  </div>
+</div>
 
   <!-- ── ADSENSE ── -->
   <div class="ad-container">
@@ -103,7 +52,7 @@
 
   <!-- ── HOST UI ── -->
   <div class="glass-card">
-    <h2>…</h2>
+    <h2 id="host-heading">…</h2>
     <input
       type="number"
       id="playerCount"
@@ -112,59 +61,121 @@
       min="1"
       max="100"
     >
-    <button id="generateButton" class="pixel-button">
-      …
-    </button>
+    <button id="generateButton" class="pixel-button">…</button>
   </div>
 
-  <!-- ── GENERATE & COPY ── -->
+  <!-- ── TRANSLATION & GENERATE SCRIPT ── -->
   <script>
-    (function() {
-      const btn = document.getElementById('generateButton');
-      btn.addEventListener('click', () => {
-        const raw = document.getElementById('playerCount').value.trim();
-        if (!/^\d+$/.test(raw)) return alert('Please enter a number');
-        const n = +raw;
-        if (n < 1 || n > 100) return alert('Must be between 1 and 100');
-        btn.classList.add('loading');
-        btn.disabled = true;
+    // 1) Translation table
+    const translations = {
+      en: { heading:"Insert number of players", placeholder:"1–100 players", button:"Generate & Copy", copied:"Copied!" },
+      ru: { heading:"Введите количество игроков", placeholder:"1–100 игроков", button:"Сгенерировать и копировать", copied:"Скопировано!" },
+      es: { heading:"Ingrese el número de jugadores", placeholder:"1–100 jugadores", button:"Generar y copiar", copied:"¡Copiado!" },
+      zh: { heading:"输入玩家数量", placeholder:"1–100 名玩家", button:"生成并复制", copied:"已复制！" }
+    };
 
-        // Generate session ID
+    window.addEventListener('DOMContentLoaded', () => {
+      // 2) Grab elements
+      const params     = new URLSearchParams(location.search);
+      const langSelect = document.getElementById('rust-language');
+      const settingsBtn= document.getElementById('settingsBtn');
+      const headingEl  = document.getElementById('host-heading');
+      const inputEl    = document.getElementById('playerCount');
+      const genBtn     = document.getElementById('generateButton');
+
+      // 3) Determine language
+      let lang = params.get('lang');
+      if (!translations[lang]) lang = 'en';
+      document.documentElement.lang = lang;
+      langSelect.value = lang;
+
+      // 4) Apply translations
+      const t = translations[lang];
+      headingEl.textContent    = t.heading;
+      inputEl.placeholder      = t.placeholder;
+      genBtn.textContent       = t.button;
+
+      // 5) Language switcher
+      langSelect.addEventListener('change', () => {
+        params.set('lang', langSelect.value);
+        location.search = params.toString();
+      });
+
+      // 6) Settings button
+      settingsBtn.addEventListener('click', () => {
+        location.href = '/settings.html';
+      });
+
+      // 7) Generate & Copy logic
+      genBtn.addEventListener('click', () => {
+        const raw = inputEl.value.trim();
+        if (!/^\d+$/.test(raw)) {
+          return alert(t.heading);
+        }
+        const n = +raw;
+        if (n < 1 || n > 100) {
+          return alert(t.placeholder);
+        }
+
+        // Show spinner
+        genBtn.classList.add('loading');
+        genBtn.disabled = true;
+
+        // Build a 6-char session ID
         let sessionId = '';
         crypto.getRandomValues(new Uint8Array(6))
           .forEach(b => sessionId += (b % 36).toString(36));
 
+        // Only copy this one URL
         const link = `${location.origin}/player.html?session=${encodeURIComponent(sessionId)}&total=${n}`;
-
-        // Copy & show feedback in current language
-        const lang = document.getElementById('rust-language').value;
-        const t    = translations[lang];
         navigator.clipboard.writeText(link)
-          .then(() => setTimeout(() => {
-            btn.classList.remove('loading');
-            btn.textContent = t.copied;
+          .then(() => {
             setTimeout(() => {
-              btn.textContent = t.button;
-              btn.disabled = false;
-            }, 2000);
-          }, 300))
+              genBtn.classList.remove('loading');
+              genBtn.textContent = t.copied;
+              setTimeout(() => {
+                genBtn.textContent = t.button;
+                genBtn.disabled = false;
+              }, 2000);
+            }, 300);
+          })
           .catch(() => {
             alert('Copy failed');
-            btn.classList.remove('loading');
-            btn.disabled = false;
+            genBtn.classList.remove('loading');
+            genBtn.disabled = false;
           });
       });
-    })();
+    });
   </script>
 
   <!-- ── BACKGROUND ROTATION ── -->
   <script>
-    const bgImages = [
-      '/images/Forest.png',
-      '/images/DomeNight.png',
-      '/images/DomeDay.png',
-      '/images/Beach.png'
-    ];
+  const bgImages = [
+    '/Images/Forest.png',
+    '/Images/DomeNight.png',
+    '/Images/DomeDay.png',
+    '/Images/Beach.png'
+  ];
+
+  // 1) Preload every image
+  bgImages.forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
+
+  // 2) Then start your cycle as before
+  let idx = 0;
+  function cycleBackground() {
+    document.body.style.backgroundImage = `url(${bgImages[idx]})`;
+    idx = (idx + 1) % bgImages.length;
+  }
+
+  cycleBackground();
+  setInterval(cycleBackground, 100000);
+</script>
+
+  <script>
+    const bgImages = ['/Images/Forest.png','/Images/DomeNight.png','/Images/DomeDay.png','/Images/Beach.png'];
     let idx = 0;
     function cycleBackground() {
       document.body.style.backgroundImage = `url(${bgImages[idx]})`;

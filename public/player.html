@@ -3,17 +3,43 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0">
-  <title>Rust Cracker</title>
+  <title>Rust Cracker – Player</title>
   <link rel="icon" href="/favicon.ico">
   <link rel="stylesheet" href="/style.css">
 
-  <!-- AdSense -->
-  <script async 
-    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5615428420355933"
-    crossorigin="anonymous"></script>
+  <!-- ── SLIDE-OUT SETTINGS PANEL STYLES ── -->
+  <style>
+    .settings-panel {
+      position: fixed; top: 0; right: -300px;
+      width: 300px; height: 100vh;
+      padding: 20px;
+      background: rgba(28,28,28,0.95);
+      backdrop-filter: blur(8px);
+      box-shadow: -4px 0 12px rgba(0,0,0,0.5);
+      color: #fff;
+      transition: right 0.3s ease;
+      z-index: 200;
+    }
+    .settings-panel.open { right: 0 }
+    .settings-close {
+      position: absolute; top: 10px; right: 10px;
+      background: none; border: none;
+      color: #fff; font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .settings-panel h3 {
+      margin-top: 40px; font-size: 1.25rem;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .settings-item { margin-top: 20px; font-size: 1rem }
+    #darkModeToggle {
+      margin-right: 8px; transform: scale(1.2);
+      vertical-align: middle;
+    }
+  </style>
 </head>
 <body>
-  <!-- ── RUST HEADER ── -->
+  <!-- ── HEADER ── -->
   <header class="rust-header">
     <a href="/" class="rust-logo">
       <img src="/Images/rust-logo.png" alt="Rust Home">
@@ -29,76 +55,16 @@
     </div>
   </header>
 
-  <!-- ── LOCALIZATION SCRIPT ── -->
-  <script>
-    window.addEventListener('DOMContentLoaded', () => {
-      const translations = {
-        en: {
-          title:      "RUST CODES",
-          prev:       "Prev",
-          next:       "Next",
-          overall:    "Overall Team Progress:",
-          yours:      "Your Progress:",
-          allPlayers: "All Players:"
-        },
-        ru: {
-          title:      "КОДЫ RUST",
-          prev:       "Назад",
-          next:       "Вперёд",
-          overall:    "Общий прогресс команды:",
-          yours:      "Ваш прогресс:",
-          allPlayers: "Все игроки:"
-        },
-        es: {
-          title:      "CÓDIGOS RUST",
-          prev:       "Anterior",
-          next:       "Siguiente",
-          overall:    "Progreso total del equipo:",
-          yours:      "Tu progreso:",
-          allPlayers: "Todos los jugadores:"
-        },
-        zh: {
-          title:      "Rust 代码",
-          prev:       "上一个",
-          next:       "下一个",
-          overall:    "团队整体进度：",
-          yours:      "您的进度：",
-          allPlayers: "所有玩家："
-        }
-      };
+  <!-- ── SETTINGS PANEL ── -->
+  <div id="settingsPanel" class="settings-panel">
+    <button id="closeSettings" class="settings-close" aria-label="Close">&times;</button>
+    <h3>Settings</h3>
+    <div class="settings-item">
+      <label><input type="checkbox" id="darkModeToggle"> Dark Mode</label>
+    </div>
+  </div>
 
-      // Grab current lang or default
-      const params     = new URLSearchParams(location.search);
-      const langSelect = document.getElementById('rust-language');
-      let   lang       = params.get('lang');
-      if (!translations[lang]) lang = 'en';
-
-      // Set <html lang> and dropdown
-      document.documentElement.lang = lang;
-      langSelect.value = lang;
-
-      // Apply translations to static UI
-      const t = translations[lang];
-      document.querySelector('.glass-card h1').textContent = t.title;
-      document.getElementById('prevBtn').textContent       = t.prev;
-      document.getElementById('nextBtn').textContent       = t.next;
-      document.getElementById('overallLabel').firstChild.textContent = t.overall + " ";
-      document.getElementById('yourLabel').firstChild.textContent    = t.yours + " ";
-      document.getElementById('allLabel').textContent                 = t.allPlayers;
-
-      // On change → reload preserving other params
-      langSelect.addEventListener('change', () => {
-        params.set('lang', langSelect.value);
-        location.search = params.toString();
-      });
-
-      // Settings button
-      document.getElementById('settingsBtn')
-        .addEventListener('click', () => location.href = '/settings.html');
-    });
-  </script>
-
-  <!-- ── AdSense ── -->
+  <!-- ── ADSENSE ── -->
   <div class="ad-container">
     <ins class="adsbygoogle"
          style="display:block"
@@ -106,12 +72,12 @@
          data-ad-slot="5306128534"
          data-ad-format="auto"
          data-full-width-responsive="true"></ins>
-    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+    <script>(adsbygoogle=window.adsbygoogle||[]).push({});</script>
   </div>
 
   <!-- ── PLAYER PANEL ── -->
   <div class="glass-card">
-    <h1>RUST CODES</h1>
+    <h1 id="titleLabel">RUST CODES</h1>
     <div class="player-code" id="playerNumber">Loading…</div>
     <div class="session-id" id="sessionId"></div>
 
@@ -134,87 +100,191 @@
     <div id="allPlayers"></div>
   </div>
 
-  <!-- ── SOCKET.IO LOGIC (unchanged) ── -->
+  <!-- ── SOCKET.IO & ALL-IN-ONE SCRIPT ── -->
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // — Your existing socket logic goes here —
-    const params       = new URLSearchParams(location.search);
+  // 1) Translation strings
+  const translations = {
+    en: {
+      title:      "RUST CODES",
+      prev:       "Prev",
+      next:       "Next",
+      overall:    "Overall Team Progress:",
+      yours:      "Your Progress:",
+      allPlayers: "All Players:"
+    },
+    ru: {
+      title:      "КОДЫ RUST",
+      prev:       "Назад",
+      next:       "Вперёд",
+      overall:    "Общий прогресс команды:",
+      yours:      "Ваш прогресс:",
+      allPlayers: "Все игроки:"
+    },
+    es: {
+      title:      "CÓDIGOS RUST",
+      prev:       "Anterior",
+      next:       "Siguiente",
+      overall:    "Progreso total del equipo:",
+      yours:      "Tu progreso:",
+      allPlayers: "Todos los jugadores:"
+    },
+    zh: {
+      title:      "Rust 代码",
+      prev:       "上一个",
+      next:       "下一个",
+      overall:    "团队整体进度：",
+      yours:      "您的进度：",
+      allPlayers: "所有玩家："
+    }
+  };
+
+  // 2) Background pre-load & rotation
+  const bgImages = [
+    '/Images/Forest.png',
+    '/Images/DomeNight.png',
+    '/Images/DomeDay.png',
+    '/Images/Beach.png'
+  ];
+  bgImages.forEach(src=>new Image().src=src);
+
+  let bgIdx=0, bgInterval;
+  function cycleBg(){
+    document.body.style.backgroundImage = `url(${bgImages[bgIdx]})`;
+    bgIdx = (bgIdx+1)%bgImages.length;
+  }
+  function startRotation(){
+    cycleBg();
+    bgInterval = setInterval(cycleBg,10000);
+  }
+ function applyDark(on) {
+  // stop any ongoing rotation
+  clearInterval(bgInterval);
+
+  if (on) {
+    // Dark Mode: pin to DomeNight, do NOT restart rotation
+    document.body.style.backgroundImage = "url('/Images/DomeNight.png')";
+  } else {
+    // Light Mode: kick off the background cycle
+    startRotation();
+  }
+}
+
+  // 3) DOM ready wiring
+  window.addEventListener('DOMContentLoaded',()=>{
+    const params      = new URLSearchParams(location.search);
+    const langSelect  = document.getElementById('rust-language');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const closeBtn    = document.getElementById('closeSettings');
+    const panel       = document.getElementById('settingsPanel');
+    const darkToggle  = document.getElementById('darkModeToggle');
+
+    // translation
+    let lang = params.get('lang');
+    if(!translations[lang]) lang='en';
+    document.documentElement.lang=lang;
+    langSelect.value=lang;
+    const t = translations[lang];
+
+    document.getElementById('titleLabel').textContent = t.title;
+    document.getElementById('prevBtn').textContent    = t.prev;
+    document.getElementById('nextBtn').textContent    = t.next;
+    document.getElementById('overallLabel').firstChild.textContent = t.overall+' ';
+    document.getElementById('yourLabel').firstChild.textContent   = t.yours+' ';
+    document.getElementById('allLabel').textContent               = t.allPlayers;
+
+    langSelect.addEventListener('change',()=>{
+      params.set('lang',langSelect.value);
+      location.search = params.toString();
+    });
+
+    // settings panel
+    settingsBtn.addEventListener('click', ()=>panel.classList.add('open'));
+    closeBtn   .addEventListener('click', ()=>panel.classList.remove('open'));
+
+    // dark mode
+    const savedDark = localStorage.getItem('darkMode')==='true';
+    darkToggle.checked=savedDark;
+    applyDark(savedDark);
+    darkToggle.addEventListener('change',e=>{
+      localStorage.setItem('darkMode',e.target.checked);
+      applyDark(e.target.checked);
+    });
+
+    // socket.io logic
     const sessionId    = params.get('session');
-    const totalPlayers = parseInt(params.get('total'),10) || 4;
-    const socket       = io({ query: { session: sessionId, total: totalPlayers } });
+    const totalPlayers = parseInt(params.get('total'),10)||4;
+    const socket       = io({ query:{ session:sessionId, total:totalPlayers } });
 
-    let playerIndex, assignedCodes = [], currentIdx = 0;
-    let progressArr   = Array(totalPlayers).fill(0);
+    let playerIndex, codes=[], idx=0;
+    let progressArr = Array(totalPlayers).fill(0);
 
-    const saved = localStorage.getItem(`playerIndex_${sessionId}`);
-    if (saved !== null) socket.emit('reconnectPlayer', +saved);
-    else                socket.emit('newPlayer');
+    const savedSlot = localStorage.getItem(`playerIndex_${sessionId}`);
+    if(savedSlot!==null) socket.emit('reconnectPlayer',+savedSlot);
+    else                 socket.emit('newPlayer');
 
-    socket.on('assignedIndex', idx => {
-      playerIndex = idx;
-      localStorage.setItem(`playerIndex_${sessionId}`, idx);
-      document.getElementById('sessionId').innerText = `Session: ${sessionId}`;
+    socket.on('assignedIndex',i=>{
+      playerIndex=i;
+      localStorage.setItem(`playerIndex_${sessionId}`,i);
+      document.getElementById('sessionId').innerText=`Session: ${sessionId}`;
       socket.emit('requestCodeList');
     });
 
-    socket.on('codeList', list => {
-      assignedCodes = list;
-      const savedPos = localStorage.getItem(`codeIdx_${sessionId}_${playerIndex}`);
-      if (savedPos !== null && +savedPos < assignedCodes.length) {
-        currentIdx = +savedPos;
-      }
-      showCode();
-      sendProgressUpdate();
+    socket.on('codeList',list=>{
+      codes=list;
+      const savedPos=+localStorage.getItem(`codeIdx_${sessionId}_${playerIndex}`)||0;
+      idx = savedPos<codes.length?savedPos:0;
+      showCode(); updateProgress();
     });
 
-    socket.on('updateProgress', data => {
-      progressArr = data.playerProgress;
+    socket.on('updateProgress',data=>{
+      progressArr=data.playerProgress;
       renderStats();
     });
 
-    socket.on('reclaimDenied', () => alert('Slot already taken'));
-    socket.on('error', msg => alert(msg));
+    socket.on('reclaimDenied',()=>alert('Slot already taken'));
+    socket.on('error',msg=>alert(msg));
 
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
-    prevBtn.addEventListener('click', () => nav(-1,'red'));
-    nextBtn.addEventListener('click', () => nav(+1,'green'));
+    prevBtn.addEventListener('click',()=>nav(-1,'red'));
+    nextBtn.addEventListener('click',()=>nav(+1,'green'));
 
-    function showCode() {
-      document.getElementById('playerNumber').innerText =
-  assignedCodes[currentIdx];
-      prevBtn.disabled = currentIdx <= 0;
-      nextBtn.disabled = currentIdx >= assignedCodes.length - 1;
+    function showCode(){
+      document.getElementById('playerNumber').innerText = codes[idx];
+      prevBtn.disabled = idx===0;
+      nextBtn.disabled = idx===codes.length-1;
       renderStats();
     }
-    function sendProgressUpdate() {
-      const pct = assignedCodes.length>1
-        ? (currentIdx/(assignedCodes.length-1))*100
+
+    function updateProgress(){
+      const pct = codes.length>1
+        ? (idx/(codes.length-1))*100
         : 100;
-      socket.emit('progressUpdate', pct);
+      socket.emit('progressUpdate',pct);
     }
-    function nav(dir, color) {
-      const nxt = currentIdx + dir;
-      if (nxt<0 || nxt>=assignedCodes.length) return;
-      currentIdx = nxt;
-      localStorage.setItem(`codeIdx_${sessionId}_${playerIndex}`, currentIdx);
-      showCode();
-      sendProgressUpdate();
-      flash(color);
+
+    function nav(dir,color){
+      const nxt = idx+dir;
+      if(nxt<0||nxt>=codes.length) return;
+      idx=nxt;
+      localStorage.setItem(`codeIdx_${sessionId}_${playerIndex}`,idx);
+      showCode(); updateProgress(); flash(color);
     }
+
     function renderStats(){
-      const you = progressArr[playerIndex] || 0;
+      const you = progressArr[playerIndex]||0;
       document.getElementById('yourProgress').innerText = you.toFixed(2)+'%';
-      document.getElementById('yourBar').style.width = you+'%';
+      document.getElementById('yourBar').style.width    = you+'%';
 
       const sum = progressArr.reduce((a,b)=>a+b,0);
-      const overall = sum / totalPlayers;
+      const overall = sum/totalPlayers;
       document.getElementById('overallProgress').innerText = overall.toFixed(2)+'%';
-      document.getElementById('overallBar').style.width = overall+'%';
+      document.getElementById('overallBar').style.width    = overall+'%';
 
       const allDiv = document.getElementById('allPlayers');
       allDiv.innerHTML = '';
-      progressArr.forEach((p,i) => {
+      progressArr.forEach((p,i)=>{
         const lbl = document.createElement('div');
         lbl.textContent = `Player ${i+1}: ${p.toFixed(2)}%`;
         const barC = document.createElement('div');
@@ -222,57 +292,23 @@
         const bar = document.createElement('div');
         bar.className = 'stat-bar';
         bar.style.width = p+'%';
-        barC.appendChild(bar);
-        allDiv.append(lbl, barC);
+        barC.append(bar);
+        allDiv.append(lbl,barC);
       });
     }
+
     function flash(color){
       const card = document.querySelector('.glass-card');
       card.classList.add(color==='green'?'flash-green':'flash-red');
       setTimeout(()=>card.classList.remove('flash-green','flash-red'),300);
     }
+
+  });
   </script>
 
-  <!-- ── BACKGROUND ROTATION (unchanged) ── -->
+  <!-- ── INITIAL ROTATION ── -->
   <script>
-  const bgImages = [
-    '/Images/Forest.png',
-    '/Images/DomeNight.png',
-    '/Images/DomeDay.png',
-    '/Images/Beach.png'
-  ];
-
-  // 1) Preload every image
-  bgImages.forEach(src => {
-    const img = new Image();
-    img.src = src;
-  });
-
-  // 2) Then start your cycle as before
-  let idx = 0;
-  function cycleBackground() {
-    document.body.style.backgroundImage = `url(${bgImages[idx]})`;
-    idx = (idx + 1) % bgImages.length;
-  }
-
-  cycleBackground();
-  setInterval(cycleBackground, 100000);
-</script>
-
-  <script>
-    const bgImages = [
-      '/Images/Forest.png',
-      '/Images/DomeNight.png',
-      '/Images/DomeDay.png',
-      '/Images/Beach.png'
-    ];
-    let bgIndex = 0;
-    function cycleBackground() {
-      document.body.style.backgroundImage = `url(${bgImages[bgIndex]})`;
-      bgIndex = (bgIndex + 1) % bgImages.length;
-    }
-    cycleBackground();
-    setInterval(cycleBackground, 10000);
+    // Start rotation if not in dark mode (handled above on DOMContentLoaded)
   </script>
 </body>
 </html>

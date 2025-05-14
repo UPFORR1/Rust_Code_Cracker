@@ -7,10 +7,36 @@
   <link rel="icon" href="/favicon.ico">
   <link rel="stylesheet" href="/style.css">
 
-  <!-- AdSense -->
-  <script async 
-    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5615428420355933"
-    crossorigin="anonymous"></script>
+  <!-- ── SETTINGS PANEL STYLES ── -->
+  <style>
+    .settings-panel {
+      position: fixed; top: 0; right: -300px;
+      width: 300px; height: 100vh;
+      padding: 20px;
+      background: rgba(28,28,28,0.95);
+      backdrop-filter: blur(8px);
+      box-shadow: -4px 0 12px rgba(0,0,0,0.5);
+      color: #fff;
+      transition: right 0.3s ease;
+      z-index: 200;
+    }
+    .settings-panel.open { right: 0; }
+    .settings-close {
+      position: absolute; top: 10px; right: 10px;
+      background: none; border: none;
+      color: #fff; font-size: 1.5rem;
+      cursor: pointer;
+    }
+    .settings-panel h3 {
+      margin-top: 40px; font-size: 1.25rem;
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+    .settings-item { margin-top: 20px; font-size: 1rem; }
+    #darkModeToggle {
+      margin-right: 8px; transform: scale(1.2);
+      vertical-align: middle;
+    }
+  </style>
 </head>
 <body>
   <!-- ── HEADER ── -->
@@ -28,6 +54,17 @@
       <button id="settingsBtn" class="rust-icon" aria-label="Settings">⚙</button>
     </div>
   </header>
+
+  <!-- ── SLIDE-OUT SETTINGS PANEL ── -->
+  <div id="settingsPanel" class="settings-panel">
+    <button id="closeSettings" class="settings-close" aria-label="Close">&times;</button>
+    <h3>Settings</h3>
+    <div class="settings-item">
+      <label>
+        <input type="checkbox" id="darkModeToggle"> Dark Mode
+      </label>
+    </div>
+  </div>
 
   <!-- ── ADSENSE ── -->
   <div class="ad-container">
@@ -54,125 +91,118 @@
     <button id="generateButton" class="pixel-button">…</button>
   </div>
 
-  <!-- ── TRANSLATION & GENERATE SCRIPT ── -->
+  <!-- ── ALL-IN-ONE SCRIPT ── -->
   <script>
-    // 1) Translation table
-    const translations = {
-      en: { heading:"Insert number of players", placeholder:"1–100 players", button:"Generate & Copy", copied:"Copied!" },
-      ru: { heading:"Введите количество игроков", placeholder:"1–100 игроков", button:"Сгенерировать и копировать", copied:"Скопировано!" },
-      es: { heading:"Ingrese el número de jugadores", placeholder:"1–100 jugadores", button:"Generar y copiar", copied:"¡Copiado!" },
-      zh: { heading:"输入玩家数量", placeholder:"1–100 名玩家", button:"生成并复制", copied:"已复制！" }
-    };
+  // 1) Translation table
+  const translations = {
+    en: { heading:"Insert number of players", placeholder:"1–100 players", button:"Generate & Copy", copied:"Copied!" },
+    ru: { heading:"Введите количество игроков", placeholder:"1–100 игроков", button:"Сгенерировать и копировать", copied:"Скопировано!" },
+    es: { heading:"Ingrese el número de jugadores", placeholder:"1–100 jugadores", button:"Generar y copiar", copied:"¡Copiado!" },
+    zh: { heading:"输入玩家数量", placeholder:"1–100 名玩家", button:"生成并复制", copied:"已复制！" }
+  };
 
-    window.addEventListener('DOMContentLoaded', () => {
-      // 2) Grab elements
-      const params     = new URLSearchParams(location.search);
-      const langSelect = document.getElementById('rust-language');
-      const settingsBtn= document.getElementById('settingsBtn');
-      const headingEl  = document.getElementById('host-heading');
-      const inputEl    = document.getElementById('playerCount');
-      const genBtn     = document.getElementById('generateButton');
-
-      // 3) Determine language
-      let lang = params.get('lang');
-      if (!translations[lang]) lang = 'en';
-      document.documentElement.lang = lang;
-      langSelect.value = lang;
-
-      // 4) Apply translations
-      const t = translations[lang];
-      headingEl.textContent    = t.heading;
-      inputEl.placeholder      = t.placeholder;
-      genBtn.textContent       = t.button;
-
-      // 5) Language switcher
-      langSelect.addEventListener('change', () => {
-        params.set('lang', langSelect.value);
-        location.search = params.toString();
-      });
-
-      // 6) Settings button
-      settingsBtn.addEventListener('click', () => {
-        location.href = '/settings.html';
-      });
-
-      // 7) Generate & Copy logic
-      genBtn.addEventListener('click', () => {
-        const raw = inputEl.value.trim();
-        if (!/^\d+$/.test(raw)) {
-          return alert(t.heading);
-        }
-        const n = +raw;
-        if (n < 1 || n > 100) {
-          return alert(t.placeholder);
-        }
-
-        // Show spinner
-        genBtn.classList.add('loading');
-        genBtn.disabled = true;
-
-        // Build a 6-char session ID
-        let sessionId = '';
-        crypto.getRandomValues(new Uint8Array(6))
-          .forEach(b => sessionId += (b % 36).toString(36));
-
-        // Only copy this one URL
-        const link = `${location.origin}/player.html?session=${encodeURIComponent(sessionId)}&total=${n}`;
-        navigator.clipboard.writeText(link)
-          .then(() => {
-            setTimeout(() => {
-              genBtn.classList.remove('loading');
-              genBtn.textContent = t.copied;
-              setTimeout(() => {
-                genBtn.textContent = t.button;
-                genBtn.disabled = false;
-              }, 2000);
-            }, 300);
-          })
-          .catch(() => {
-            alert('Copy failed');
-            genBtn.classList.remove('loading');
-            genBtn.disabled = false;
-          });
-      });
-    });
-  </script>
-
-  <!-- ── BACKGROUND ROTATION ── -->
-  <script>
+  // 2) Preload & rotation setup
   const bgImages = [
     '/Images/Forest.png',
     '/Images/DomeNight.png',
     '/Images/DomeDay.png',
     '/Images/Beach.png'
   ];
+  bgImages.forEach(src => new Image().src = src);
 
-  // 1) Preload every image
-  bgImages.forEach(src => {
-    const img = new Image();
-    img.src = src;
-  });
-
-  // 2) Then start your cycle as before
-  let idx = 0;
+  let bgIdx = 0, cycleInterval;
   function cycleBackground() {
-    document.body.style.backgroundImage = `url(${bgImages[idx]})`;
-    idx = (idx + 1) % bgImages.length;
+    document.body.style.backgroundImage = `url(${bgImages[bgIdx]})`;
+    bgIdx = (bgIdx + 1) % bgImages.length;
+  }
+  function startRotation() {
+    cycleBackground();
+    cycleInterval = setInterval(cycleBackground, 10000);
+  }
+  function applyDarkMode(on) {
+    clearInterval(cycleInterval);
+    if (on) {
+      // pin to DomeNight, never restart
+      document.body.style.backgroundImage = "url('/Images/DomeNight.png')";
+    } else {
+      startRotation();
+    }
   }
 
-  cycleBackground();
-  setInterval(cycleBackground, 100000);
-</script>
+  // 3) DOM-ready wiring
+  window.addEventListener('DOMContentLoaded', () => {
+    const params      = new URLSearchParams(location.search);
+    const langSelect  = document.getElementById('rust-language');
+    const headingEl   = document.getElementById('host-heading');
+    const inputEl     = document.getElementById('playerCount');
+    const genBtn      = document.getElementById('generateButton');
+    const settingsBtn = document.getElementById('settingsBtn');
+    const panel       = document.getElementById('settingsPanel');
+    const closeBtn    = document.getElementById('closeSettings');
+    const darkToggle  = document.getElementById('darkModeToggle');
 
-  <script>
-    const bgImages = ['/Images/Forest.png','/Images/DomeNight.png','/Images/DomeDay.png','/Images/Beach.png'];
-    let idx = 0;
-    function cycleBackground() {
-      document.body.style.backgroundImage = `url(${bgImages[idx]})`;
-      idx = (idx + 1) % bgImages.length;
-    }
-    cycleBackground();
-    setInterval(cycleBackground, 10000);
+    // language logic
+    let lang = params.get('lang');
+    if (!translations[lang]) lang = 'en';
+    document.documentElement.lang = lang;
+    langSelect.value = lang;
+    const t = translations[lang];
+    headingEl.textContent    = t.heading;
+    inputEl.placeholder      = t.placeholder;
+    genBtn.textContent       = t.button;
+
+    langSelect.addEventListener('change', () => {
+      params.set('lang', langSelect.value);
+      location.search = params.toString();
+    });
+
+    // slide-out panel
+    settingsBtn.addEventListener('click',  () => panel.classList.add('open'));
+    closeBtn   .addEventListener('click', () => panel.classList.remove('open'));
+
+    // dark mode toggle
+    const savedDark = localStorage.getItem('darkMode') === 'true';
+    darkToggle.checked = savedDark;
+    applyDarkMode(savedDark);
+    darkToggle.addEventListener('change', e => {
+      localStorage.setItem('darkMode', e.target.checked);
+      applyDarkMode(e.target.checked);
+    });
+
+    // generate & copy
+    genBtn.addEventListener('click', () => {
+      const raw = inputEl.value.trim();
+      if (!/^\d+$/.test(raw)) return alert(t.heading);
+      const n = +raw;
+      if (n < 1 || n > 100) return alert(t.placeholder);
+
+      genBtn.classList.add('loading');
+      genBtn.disabled = true;
+
+      let sessionId = '';
+      crypto.getRandomValues(new Uint8Array(6))
+        .forEach(b => sessionId += (b % 36).toString(36));
+
+      const link = `${location.origin}/player.html?session=${encodeURIComponent(sessionId)}&total=${n}`;
+      navigator.clipboard.writeText(link)
+        .then(() => setTimeout(() => {
+          genBtn.classList.remove('loading');
+          genBtn.textContent = t.copied;
+          setTimeout(() => {
+            genBtn.textContent = t.button;
+            genBtn.disabled = false;
+          }, 2000);
+        }, 300))
+        .catch(() => {
+          alert('Copy failed');
+          genBtn.classList.remove('loading');
+          genBtn.disabled = false;
+        });
+    });
+
+    // start rotation if not in dark mode
+    if (!savedDark) startRotation();
+  });
   </script>
 </body>
 </html>
