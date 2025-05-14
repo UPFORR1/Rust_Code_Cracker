@@ -1,102 +1,173 @@
-/* --- GLOBAL PAGE STYLING --- */
+/* ── ROTATING FULL-SCREEN BACKGROUND ── */
 body {
-  background: linear-gradient(135deg, #111, #222);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background-color: #1a1a1a;           /* fallback */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background-image 1s ease-in-out;
+}
+
+/* ========== BASE RESET & FONTS ========== */
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600&family=Press+Start+2P&display=swap');
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Orbitron', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #ccc;
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
-  margin: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: white;
 }
 
-/* --- CARD CONTAINER (shared for both pages) --- */
+/* ========== LAYOUT CONTAINERS ========== */
+.page-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.ad-container {
+  flex-shrink: 0;
+  width: 160px;
+}
+
+/* ========== CARD PANEL ========== */
 .glass-card {
-  backdrop-filter: blur(10px);
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 20px;
-  padding: 40px;
+  position: absolute;      /* pull it out of the normal flow */
+  top: 50%;                /* 50% down the viewport */
+  left: 50%;               /* 50% across the viewport */
+  transform: translate(-50%, -50%);
+  /* whatever width you like: */
+  width: 400px;
+  max-width: 90%;
   width: 90%;
   max-width: 600px;
-  min-height: 300px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  padding: 40px;
+  margin: auto;
+  background: #2c2c2c;
+  border: 2px solid #3f3f3f;
+  border-radius: 6px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.6);
   text-align: center;
+  transition: box-shadow 0.3s ease;
 }
 
-/* --- HEADINGS --- */
+/* ========== HEADINGS ========== */
 h1, h2 {
-  margin-bottom: 20px;
   font-weight: 600;
+  font-size: 2rem;
+  color: #e0e0e0;
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
 }
 
-/* --- INPUT FIELD --- */
+/* ========== INPUT FIELD ========== */
 .host-input {
   width: 90%;
   max-width: 400px;
   padding: 1rem;
   font-size: 1.2rem;
   margin: 20px auto;
-  border-radius: 8px;
-  border: none;
-  box-sizing: border-box;
+  border: 2px solid #444;
+  background: #111;
+  color: #fff;
+  border-radius: 4px;
   outline: none;
 }
 
-/* --- BUTTONS --- */
-.host-button, .copy-button, .prev-button, .next-button {
-  width: auto;
-  padding: 1rem 1.5rem;
-  font-size: 1.1rem;
-  margin: 5px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  color: white;
-  transition: background 0.2s;
-}
-
-.host-button { background: #3b82f6; }
-.copy-button { background: #10b981; }
-.prev-button { background: #ef4444; }
-.next-button { background: #3b82f6; }
-
-.host-button:hover { background: #2563eb; }
-.copy-button:hover { background: #059669; }
-.prev-button:hover { background: #b91c1c; }
-.next-button:hover { background: #2563eb; }
-
-/* --- BUTTON ROW FOR PLAYER PAGE --- */
-.button-row {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  margin: 15px 0;
-}
-
-/* --- PLAYER CODE DISPLAY --- */
-.player-code {
-  background: rgba(34, 197, 94, 0.2);
-  color: #22c55e;
-  padding: 20px;
-  border-radius: 12px;
+/* ========== PIXEL BUTTONS (Prev/Next) ========== */
+.pixel-button {
+  font-family: 'Press Start 2P', monospace;
   font-size: 2rem;
-  margin: 20px 0;
+  padding: 20px 48px;
+  margin: 12px;
+  color: #d3d3d3;
+  background-color: #d34a32;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  transition: transform 0.1s ease;
+  position: relative;
+  border: none;
+  pointer-events: auto !important; /* ensure clickable */
 }
 
-/* --- PROGRESS BARS --- */
+.pixel-button.blue {
+  background-color: #2980f3;
+}
+
+.pixel-button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+/* ========== SPINNER OVERRIDE ========== */
+.pixel-button.loading {
+  color: transparent !important;
+  opacity: 0.6;
+}
+
+.pixel-button.loading::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  background-image: url("/images/spinner.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  transform: translate(-50%, -50%);
+  animation: spin 1s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes spin {
+  0%   { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ========== PLAYER CODE DISPLAY ========== */
+.player-code {
+  
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.2rem;
+  background-color: #29804f;
+  color: #b0ffc0;
+  padding: 30px 40px;
+  border-radius: 8px;
+  margin: 30px 0;
+  white-space: nowrap;
+  overflow-x: auto;
+  text-align: center;
+  box-shadow: inset 0 0 6px rgba(0,0,0,0.7);
+  
+}
+
+/* ========== PROGRESS BAR STYLING ========== */
 .stats-title {
-  margin: 10px 0;
+  margin: 10px 0 5px;
   font-weight: bold;
   color: #facc15;
+  font-size: 1rem;
 }
 
 .stat-container {
-  background: rgba(255,255,255,0.1);
+  background: #444;
   border-radius: 4px;
-  overflow: hidden;
   height: 10px;
   margin: 5px 0;
+  overflow: hidden;
 }
 
 .stat-bar {
@@ -106,7 +177,7 @@ h1, h2 {
   transition: width 0.3s;
 }
 
-/* --- SCROLLBAR FOR ALL PLAYERS --- */
+/* ========== SCROLLBAR (All Players List) ========== */
 #allPlayers {
   max-height: 300px;
   overflow-y: auto;
@@ -114,25 +185,287 @@ h1, h2 {
   scrollbar-width: thin;
   scrollbar-color: #facc15 rgba(255,255,255,0.1);
 }
-
 #allPlayers::-webkit-scrollbar {
   width: 8px;
 }
-
 #allPlayers::-webkit-scrollbar-track {
   background: rgba(255,255,255,0.1);
 }
-
 #allPlayers::-webkit-scrollbar-thumb {
   background-color: #facc15;
   border-radius: 4px;
 }
+
+/* ========== FLASHING STATES ========== */
 .glass-card.flash-green {
   box-shadow: 0 0 30px rgba(34,197,94,0.4);
+}
+.glass-card.flash-red {
+  box-shadow: 0 0 30px rgba(239,68,68,0.4);
+}
+
+/* ========== MOBILE ========== */
+@media (max-width: 800px) {
+  .page-container { flex-direction: column; }
+  .ad-container { display: none; }
+}
+@media (max-width: 480px) {
+  h1, h2 { font-size: 1.5rem; }
+  .host-input { font-size: 1rem; padding: 0.75rem; }
+  .pixel-button { font-size: 0.9rem; padding: 16px 32px; margin: 6px; }
+  .glass-card { padding: 20px; }
+  .player-code { font-size: 1.3rem; }
+  .stats-title { font-size: 0.9rem; }
+  .stat-container { height: 8px; }
+  #allPlayers { max-height: 200px; }
+}
+/* ── STRONGER, LONGER FADE OVERLAY ── */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  left: 0; right: 0;
+  height: 200px;       /* total overlay height—you can tweak this */
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* top: solid grey for 20%, then fade out over the next 40% */
+
+
+/* bottom: same in reverse */
+body::after {
+  bottom: 0;
+  background: linear-gradient(
+    to top,
+    rgba(44,44,44,0.95) 0%,
+    rgba(44,44,44,0.95) 25%,
+    rgba(44,44,44,0) 50%
+  );
+}
+
+/* ── FORCE CARD CENTER & LAYER ABOVE FADE ── */
+.glass-card {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 2;               /* above the fade (z-index:1) */
+}
+.rust-header {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 10%;
+  background: rgba(44,44,44,0.85);
+  backdrop-filter: blur(8px);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  z-index: 100;
+}
+
+/* left side: logo + nav */
+.rust-header-left {
+  display: flex;
+  align-items: center;
+}
+.rust-logo img {
+  height: clamp(150px, 8vw, 500px);
+  width: auto;
+}
+.rust-nav {
+  display: flex;
+  gap: 20px;
+  margin-left: 24px;
+}
+.rust-nav-item {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 0.9rem;
+  color: #fff;
+  opacity: 0.6;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.rust-nav-item.active { opacity: 1; }
+.rust-nav-item.disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* right side: lang + icons */
+.rust-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.rust-language {
+  appearance: none;             /* remove native arrow */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background: rgba(25,25,25,0.85);
+  color: #fff;
+  border: 1px solid #555;
+  padding: 4px 24px 4px 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.rust-icon {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 1.2rem;
+  cursor: pointer;
+  opacity: 0.8;
+  padding: 4px;
+}
+.rust-icon:hover { opacity: 1; }
+
+/* push page content down so it’s never hidden behind the header */
+body {
+  padding-top: 60px;
+}
+/* ── REFINED GLASS‐MORPHIC PANEL ── */
+.glass-card {
+  background: rgba(30, 30, 30, 0.8);           /* darker, semi-translucent */
+  border: 1px solid rgba(255,255,255,0.15);    /* subtle white edge */
+  backdrop-filter: blur(8px);                  /* glass blur */
+  border-radius: 12px;                         /* softer corners */
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);       /* deeper shadow */
+  padding: 40px 30px;                          /* slightly tighter */
+  width: 400px;
+  max-width: 90%;
+  text-align: center;
   transition: box-shadow 0.3s ease;
 }
 
-.glass-card.flash-red {
-  box-shadow: 0 0 30px rgba(239,68,68,0.4);
-  transition: box-shadow 0.3s ease;
+/* ── HEADERS ── */
+.glass-card h1,
+.glass-card h2 {
+  margin-bottom: 24px;
+}
+
+/* ── PLAYER CODE DISPLAY ── */
+.player-code {
+  background: linear-gradient(135deg, #2c6e49, #3a8d5b);
+  color: #d1ffd6;                             /* soft neon green */
+  font-family: 'Press Start 2P', monospace;
+  font-size: 1.3rem;
+  letter-spacing: 0.1em;
+  padding: 25px 30px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 8px rgba(0,0,0,0.7);
+  margin: 30px 0;
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+/* ── BUTTONS ── */
+.pixel-button {
+  border-radius: 6px;
+  box-shadow:
+    inset 0 -2px 0 rgba(0,0,0,0.2),
+    0 4px 8px rgba(0,0,0,0.4);
+  transition: transform 0.1s ease, box-shadow 0.2s ease;
+}
+.pixel-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 -2px 0 rgba(0,0,0,0.2),
+    0 6px 12px rgba(0,0,0,0.5);
+}
+.pixel-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+/* ── PROGRESS BARS ── */
+.stat-container {
+  background: rgba(255,255,255,0.1);
+  height: 8px;      /* a bit taller for clarity */
+  border-radius: 4px;
+  margin: 8px 0;
+}
+.stat-bar {
+  background: #facc15;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* ── SECTION TITLES ── */
+.stats-title {
+  margin: 12px 0 6px;
+}
+
+/* ── SCROLLBAR ── */
+#allPlayers {
+  scrollbar-width: thin;
+  scrollbar-color: #facc15 rgba(255,255,255,0.1);
+}
+#allPlayers::-webkit-scrollbar {
+  width: 8px;
+}
+#allPlayers::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.1);
+}
+#allPlayers::-webkit-scrollbar-thumb {
+  background-color: #facc15;
+  border-radius: 4px;
+}
+/* ── WIDENED PANEL & REFINED PROGRESS BARS ── */
+
+/* Glass card wider & softer */
+.glass-card {
+  width: 500px;
+  max-width: 90%;
+  padding: 40px 30px;
+  background: rgba(28, 28, 28, 0.85);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Section titles a touch larger */
+.stats-title {
+  font-size: 1.1rem;
+  margin: 14px 0 6px;
+}
+
+/* Modern, pill-shaped track */
+.stat-container {
+  background: rgba(255,255,255,0.05);
+  border-radius: 4px;
+  height: 8px;
+  margin: 8px 0 16px;
+  overflow: hidden;
+}
+
+/* Gradient fill & smooth animation */
+.stat-bar {
+  background: linear-gradient(
+    90deg,
+    #facc15,
+    #eab308
+  );
+  height: 100%;
+  width: 0%;
+  border-radius: 4px;
+  transition: width 0.5s ease-in-out;
+}
+
+/* Tighter spacing under “All Players” */
+#allPlayers {
+  margin-top: 8px;
+}
+.glass-card {
+  width: 550px;
+  max-width: 95%;
+}
+.player-code {
+  /* scale fluidly between 2rem and 3.5rem based on viewport */
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  /* a bit more breathing room */
+  padding: 15px 20px;
+  /* tighten the spacing so the numbers don’t run off */
+  letter-spacing: 0.1em;
 }

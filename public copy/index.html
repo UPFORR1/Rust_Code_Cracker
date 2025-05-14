@@ -1,39 +1,177 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Code Rust - Host Page</title>
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Rust Cracker</title>
+  <link rel="icon" href="/favicon.ico">
+  <link rel="stylesheet" href="/style.css">
+
+  <!-- AdSense -->
+  <script async 
+    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5615428420355933"
+    crossorigin="anonymous"></script>
 </head>
 <body>
-    <div class="glass-card">
-        <h2>Insert number of players</h2>
-        <input type="number" id="playerCount" class="host-input" placeholder="Insert player number">
-        <button class="host-button" onclick="generateLink()">Generate Link</button>
-        <br>
-        <button id="copyButton" class="copy-button" style="display:none;" onclick="copyLink()">Copy Link</button>
+  <!-- ── HEADER ── -->
+  <header class="rust-header">
+    <a href="/" class="rust-logo">
+      <img src="/images/rust-logo.png" alt="Rust Home">
+    </a>
+    <div class="rust-header-right">
+      <select id="rust-language" class="rust-language">
+        <option value="en">ENG</option>
+        <option value="ru">RU</option>
+        <option value="es">ES</option>
+        <option value="zh">中</option>
+      </select>
+      <button id="settingsBtn" class="rust-icon" aria-label="Settings">⚙</button>
     </div>
+  </header>
 
-    <script>
-        let generatedLink = '';
-
-        function generateLink() {
-            const count = parseInt(document.getElementById('playerCount').value, 10);
-            if (!count || count < 1) {
-                alert('Please enter a valid player count.');
-                return;
-            }
-            const sessionId = Math.random().toString(36).substring(2, 8);
-            generatedLink = 
-              `http://localhost:3000/player.html?session=${sessionId}&total=${count}`;
-            document.getElementById('copyButton').style.display = 'inline-block';
-            document.getElementById('copyButton').innerText = 'Copy Link';
+  <!-- ── LANGUAGE & TRANSLATION LOGIC ── -->
+  <script>
+    window.addEventListener('DOMContentLoaded', () => {
+      const translations = {
+        en: {
+          heading: "Insert number of players",
+          placeholder: "1–100 players",
+          button: "Generate & Copy",
+          copied:  "Copied!"
+        },
+        ru: {
+          heading: "Введите количество игроков",
+          placeholder: "1–100 игроков",
+          button: "Сгенерировать и копировать",
+          copied:  "Скопировано!"
+        },
+        es: {
+          heading: "Ingrese el número de jugadores",
+          placeholder: "1–100 jugadores",
+          button: "Generar y copiar",
+          copied:  "¡Copiado!"
+        },
+        zh: {
+          heading: "输入玩家数量",
+          placeholder: "1–100 名玩家",
+          button: "生成并复制",
+          copied:  "已复制！"
         }
+      };
 
-        function copyLink() {
-            navigator.clipboard.writeText(generatedLink).then(() => {
-                document.getElementById('copyButton').innerText = 'Copied!';
-            });
-        }
-    </script>
+      const params     = new URLSearchParams(window.location.search);
+      const langSelect = document.getElementById('rust-language');
+      let   lang       = params.get('lang');
+
+      // 1) Validate or default to English
+      if (!lang || !translations[lang]) lang = 'en';
+
+      // 2) Set <html lang=…> and dropdown
+      document.documentElement.lang = lang;
+      langSelect.value = lang;
+
+      // 3) Apply translations
+      const t = translations[lang];
+      document.querySelector('.glass-card h2').textContent      = t.heading;
+      document.getElementById('playerCount').placeholder        = t.placeholder;
+      document.getElementById('generateButton').textContent     = t.button;
+
+      // 4) On language change, update param & reload
+      langSelect.addEventListener('change', () => {
+        params.set('lang', langSelect.value);
+        window.location.search = params.toString();
+      });
+
+      // 5) Settings button
+      document.getElementById('settingsBtn')
+        .addEventListener('click', () => {
+          window.location.href = '/settings.html';
+        });
+    });
+  </script>
+
+  <!-- ── ADSENSE ── -->
+  <div class="ad-container">
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-5615428420355933"
+         data-ad-slot="5306128534"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+    <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+  </div>
+
+  <!-- ── HOST UI ── -->
+  <div class="glass-card">
+    <h2>…</h2>
+    <input
+      type="number"
+      id="playerCount"
+      class="host-input"
+      placeholder=""
+      min="1"
+      max="100"
+    >
+    <button id="generateButton" class="pixel-button">
+      …
+    </button>
+  </div>
+
+  <!-- ── GENERATE & COPY ── -->
+  <script>
+    (function() {
+      const btn = document.getElementById('generateButton');
+      btn.addEventListener('click', () => {
+        const raw = document.getElementById('playerCount').value.trim();
+        if (!/^\d+$/.test(raw)) return alert('Please enter a number');
+        const n = +raw;
+        if (n < 1 || n > 100) return alert('Must be between 1 and 100');
+        btn.classList.add('loading');
+        btn.disabled = true;
+
+        // Generate session ID
+        let sessionId = '';
+        crypto.getRandomValues(new Uint8Array(6))
+          .forEach(b => sessionId += (b % 36).toString(36));
+
+        const link = `${location.origin}/player.html?session=${encodeURIComponent(sessionId)}&total=${n}`;
+
+        // Copy & show feedback in current language
+        const lang = document.getElementById('rust-language').value;
+        const t    = translations[lang];
+        navigator.clipboard.writeText(link)
+          .then(() => setTimeout(() => {
+            btn.classList.remove('loading');
+            btn.textContent = t.copied;
+            setTimeout(() => {
+              btn.textContent = t.button;
+              btn.disabled = false;
+            }, 2000);
+          }, 300))
+          .catch(() => {
+            alert('Copy failed');
+            btn.classList.remove('loading');
+            btn.disabled = false;
+          });
+      });
+    })();
+  </script>
+
+  <!-- ── BACKGROUND ROTATION ── -->
+  <script>
+    const bgImages = [
+      '/images/Forest.png',
+      '/images/DomeNight.png',
+      '/images/DomeDay.png',
+      '/images/Beach.png'
+    ];
+    let idx = 0;
+    function cycleBackground() {
+      document.body.style.backgroundImage = `url(${bgImages[idx]})`;
+      idx = (idx + 1) % bgImages.length;
+    }
+    cycleBackground();
+    setInterval(cycleBackground, 10000);
+  </script>
 </body>
 </html>
