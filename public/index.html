@@ -140,6 +140,31 @@
 
   <!-- ── BACKGROUND ROTATION ── -->
   <script>
+  const bgImages = [
+    '/images/Forest.png',
+    '/images/DomeNight.png',
+    '/images/DomeDay.png',
+    '/images/Beach.png'
+  ];
+
+  // 1) Preload every image
+  bgImages.forEach(src => {
+    const img = new Image();
+    img.src = src;
+  });
+
+  // 2) Then start your cycle as before
+  let idx = 0;
+  function cycleBackground() {
+    document.body.style.backgroundImage = `url(${bgImages[idx]})`;
+    idx = (idx + 1) % bgImages.length;
+  }
+
+  cycleBackground();
+  setInterval(cycleBackground, 10000);
+</script>
+
+  <script>
     const bgImages = ['/Images/Forest.png','/Images/DomeNight.png','/Images/DomeDay.png','/Images/Beach.png'];
     let idx = 0;
     function cycleBackground() {
